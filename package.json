@@ -1,0 +1,12 @@
+{
+  "name": "jvcleaning-bot",
+  "version": "0.1.0",
+  "description": "Chatbot WhatsApp per le cleaner di JVCLEANING - prototipo Just Urban",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
