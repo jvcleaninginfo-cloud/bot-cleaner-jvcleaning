@@ -91,8 +91,9 @@ function componiMessaggio(nomeCleaner, appartamenti) {
   });
   return testo.trim();
 }
+async function inviaPlanningDelGiorno(nomeFoglioMese, opzioni = {}) {
+  const dryRun = !!opzioni.dryRun; // se true, NON invia davvero su WhatsApp, solo anteprima
 
-async function inviaPlanningDelGiorno(nomeFoglioMese) {
   const doc = await getSheetsDoc();
   const oggi = formatDateItaliano(new Date());
 
@@ -104,12 +105,17 @@ async function inviaPlanningDelGiorno(nomeFoglioMese) {
 
   for (const [nomeCleaner, appartamenti] of Object.entries(gruppi)) {
     const numero = anagrafica[nomeCleaner];
+    const messaggio = componiMessaggio(nomeCleaner, appartamenti);
+
     if (!numero) {
-      risultati.push({ cleaner: nomeCleaner, stato: 'SALTATO - numero non trovato in anagrafica' });
+      risultati.push({ cleaner: nomeCleaner, stato: 'SALTATO - numero non trovato in anagrafica', messaggio });
       continue;
     }
 
-    const messaggio = componiMessaggio(nomeCleaner, appartamenti);
+    if (dryRun) {
+      risultati.push({ cleaner: nomeCleaner, numero, stato: 'ANTEPRIMA (non inviato)', messaggio });
+      continue;
+    }
 
     try {
       await twilioClient.messages.create({
@@ -124,6 +130,6 @@ async function inviaPlanningDelGiorno(nomeFoglioMese) {
   }
 
   return risultati;
-}
+  }
 
 module.exports = { inviaPlanningDelGiorno };
