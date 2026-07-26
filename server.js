@@ -8,7 +8,7 @@
 
 const express = require("express");
 const { rispondi } = require("./intent");
-
+const { inviaPlanningDelGiorno } = require("./sendDailyPlanning");
 const app = express();
 app.use(express.urlencoded({ extended: false })); // Twilio manda dati come form, non JSON
 app.use(express.json());
@@ -45,6 +45,16 @@ function escapeXml(str) {
 }
 
 const PORT = process.env.PORT || 3000;
+// Endpoint per inviare davvero il planning di oggi via WhatsApp a tutte le cleaner
+app.get("/invia-planning-oggi", async (req, res) => {
+  const nomeFoglio = req.query.foglio || "LUGLIO 2026";
+  try {
+    const risultati = await inviaPlanningDelGiorno(nomeFoglio);
+    res.json({ ok: true, risultati });
+  } catch (err) {
+    res.status(500).json({ ok: false, errore: err.message });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Bot JVCLEANING in ascolto sulla porta ${PORT}`);
   console.log(`Prova subito: http://localhost:${PORT}/test?msg=checklist via roma 12`);
