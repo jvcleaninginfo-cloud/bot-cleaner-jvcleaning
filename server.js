@@ -5,7 +5,6 @@
 // 1. npm install
 // 2. npm start (o ospitarlo su Railway/Render)
 // 3. Nel pannello Twilio, impostare "When a message comes in" = https://tuo-dominio/webhook
-
 const express = require("express");
 const { rispondi } = require("./intent");
 const { inviaPlanningDelGiorno } = require("./sendDailyPlanning");
@@ -17,17 +16,13 @@ app.use(express.json());
 app.post("/webhook", (req, res) => {
   const testoMessaggio = req.body.Body || "";
   const mittente = req.body.From || "sconosciuto";
-
   console.log(`[Messaggio ricevuto da ${mittente}]: ${testoMessaggio}`);
-
   const rispostaTesto = rispondi(testoMessaggio);
-
   // Formato TwiML richiesto da Twilio per rispondere ai messaggi WhatsApp
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Message>${escapeXml(rispostaTesto)}</Message>
 </Response>`;
-
   res.type("text/xml").send(twiml);
 });
 
@@ -37,14 +32,6 @@ app.get("/test", (req, res) => {
   res.json({ richiesta: testoMessaggio, risposta: rispondi(testoMessaggio) });
 });
 
-function escapeXml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-const PORT = process.env.PORT || 3000;
 // Endpoint per inviare davvero il planning di oggi via WhatsApp a tutte le cleaner
 app.get("/invia-planning-oggi", async (req, res) => {
   const nomeFoglio = req.query.foglio || "LUGLIO 2026";
@@ -55,6 +42,26 @@ app.get("/invia-planning-oggi", async (req, res) => {
     res.status(500).json({ ok: false, errore: err.message });
   }
 });
+
+// Endpoint di ANTEPRIMA: mostra cosa verrebbe inviato, senza mandare nulla su WhatsApp
+app.get("/anteprima-planning-oggi", async (req, res) => {
+  const nomeFoglio = req.query.foglio || "LUGLIO 2026";
+  try {
+    const risultati = await inviaPlanningDelGiorno(nomeFoglio, { dryRun: true });
+    res.json({ ok: true, risultati });
+  } catch (err) {
+    res.status(500).json({ ok: false, errore: err.message });
+  }
+});
+
+function escapeXml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Bot JVCLEANING in ascolto sulla porta ${PORT}`);
   console.log(`Prova subito: http://localhost:${PORT}/test?msg=checklist via roma 12`);
